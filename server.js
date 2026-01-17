@@ -1,320 +1,333 @@
 require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
-const cors = require('cors');
+const session = require('express-session');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const MAIN_API_URL = process.env.API_URL || 'https://chege-api.onrender.com';
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+const ADMIN_PASSWORD = process.env.ADMIN_PANEL_PASSWORD || 'admin123';
 
-// Middleware
-app.use(cors());
+// Security middleware
+app.use(helmet());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
 
-// Database file
-const ACCOUNTS_FILE = path.join(__dirname, 'accounts.json');
-
-// ===== ACCOUNT MANAGEMENT =====
-function loadAccounts() {
-    try {
-        if (fs.existsSync(ACCOUNTS_FILE)) {
-            return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8'));
-        }
-        return {};
-    } catch (error) {
-        console.error('Error loading accounts:', error);
-        return {};
+// Session management
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'chege-admin-secret-2024',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
-}
+}));
 
-function saveAccounts(accounts) {
-    try {
-        fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error saving accounts:', error);
-        return false;
-    }
-}
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', limiter);
 
-// Initialize empty accounts file if not exists
-if (!fs.existsSync(ACCOUNTS_FILE)) {
-    saveAccounts({});
-}
-
-// ===== AUTHENTICATION MIDDLEWARE =====
-function authenticateAdmin(req, res, next) {
-    const adminPassword = req.headers['admin-password'] || req.query.password;
-    
-    if (!adminPassword || adminPassword !== process.env.ADMIN_PASSWORD) {
-        return res.status(401).json({
-            success: false,
-            error: 'Unauthorized. Invalid admin password.'
-        });
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+    if (!req.session.isAuthenticated) {
+        return res.status(401).json({ error: 'Unauthorized. Please login.' });
     }
     next();
-}
+};
 
-// ===== ROUTES =====
+// Serve static files
+app.use(express.static('public'));
 
-// Serve admin pages
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// ==================== ADMIN ROUTES ====================
 
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-app.get('/transactions', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'transactions.html'));
-});
-
-// ===== API ENDPOINTS =====
-
-// 1. Health check
-app.get('/api/health', (req, res) => {
-    const accounts = loadAccounts();
-    let totalAccounts = 0;
+// Login route
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
     
-    Object.values(accounts).forEach(serviceAccounts => {
-        totalAccounts += serviceAccounts.length;
-    });
-    
-    res.json({
-        success: true,
-        message: 'Admin API is running',
-        services: Object.keys(accounts).length,
-        totalAccounts: totalAccounts,
-        timestamp: new Date().toISOString()
+    if (password === ADMIN_PASSWORD) {
+        req.session.isAuthenticated = true;
+        req.session.loginTime = new Date();
+        res.json({ success: true, message: 'Login successful' });
+    } else {
+        res.status(401).json({ success: false, error: 'Invalid password' });
+    }
+});
+
+// Logout route
+app.post('/api/admin/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Check auth status
+app.get('/api/admin/status', (req, res) => {
+    res.json({ 
+        authenticated: !!req.session.isAuthenticated,
+        loginTime: req.session.loginTime 
     });
 });
 
-// 2. Get all accounts (Admin only)
-app.get('/api/admin/accounts', authenticateAdmin, (req, res) => {
+// ==================== API PROXY ROUTES ====================
+
+// Proxy middleware to forward requests to main API
+const proxyToMainAPI = async (req, res) => {
+    if (!req.session.isAuthenticated) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     try {
-        const accounts = loadAccounts();
-        let totalAccounts = 0;
-        let serviceStats = {};
+        const url = `${MAIN_API_URL}${req.originalUrl.replace('/api/proxy', '')}`;
+        const method = req.method;
         
-        Object.entries(accounts).forEach(([service, serviceAccounts]) => {
-            serviceStats[service] = {
-                count: serviceAccounts.length,
-                available: serviceAccounts.filter(acc => !acc.fullyUsed).length
-            };
-            totalAccounts += serviceAccounts.length;
-        });
+        const config = {
+            method: method,
+            url: url,
+            headers: {
+                'x-admin-api-key': ADMIN_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 second timeout
+        };
+
+        if (['POST', 'PUT', 'PATCH'].includes(method)) {
+            config.data = req.body;
+        }
+
+        const response = await axios(config);
         
-        res.json({
-            success: true,
-            totalAccounts: totalAccounts,
-            services: Object.keys(accounts).length,
-            serviceStats: serviceStats,
-            accounts: accounts
-        });
+        // Log successful API calls (for audit)
+        console.log(`[${new Date().toISOString()}] API Proxy: ${method} ${url} - ${response.status}`);
+        
+        res.status(response.status).json(response.data);
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load accounts'
+        console.error('API Proxy Error:', error.message);
+        
+        if (error.response) {
+            // Main API returned an error
+            res.status(error.response.status).json(error.response.data);
+        } else if (error.request) {
+            // No response from main API
+            res.status(503).json({ 
+                success: false, 
+                error: 'Main API is unreachable. Please try again later.' 
+            });
+        } else {
+            // Other errors
+            res.status(500).json({ 
+                success: false, 
+                error: 'Internal server error' 
+            });
+        }
+    }
+};
+
+// Proxy routes (all go through authentication)
+app.get('/api/proxy/*', requireAuth, proxyToMainAPI);
+app.post('/api/proxy/*', requireAuth, proxyToMainAPI);
+app.put('/api/proxy/*', requireAuth, proxyToMainAPI);
+app.delete('/api/proxy/*', requireAuth, proxyToMainAPI);
+app.patch('/api/proxy/*', requireAuth, proxyToMainAPI);
+
+// ==================== ADMIN PANEL API ====================
+
+// Get dashboard stats (aggregated from main API)
+app.get('/api/admin/dashboard', requireAuth, async (req, res) => {
+    try {
+        // Get stats from main API
+        const statsResponse = await axios.get(`${MAIN_API_URL}/api/accounts`, {
+            headers: { 'x-admin-api-key': ADMIN_API_KEY }
+        });
+
+        const servicesResponse = await axios.get(`${MAIN_API_URL}/api/services`, {
+            headers: { 'x-admin-api-key': ADMIN_API_KEY }
+        });
+
+        const availabilityResponse = await axios.get(`${MAIN_API_URL}/api/availability`, {
+            headers: { 'x-admin-api-key': ADMIN_API_KEY }
+        });
+
+        // Aggregate data for dashboard
+        const dashboardData = {
+            success: true,
+            timestamp: new Date().toISOString(),
+            stats: {
+                totalAccounts: statsResponse.data.totalAccounts || 0,
+                totalServices: servicesResponse.data.count || 0,
+                serviceStats: statsResponse.data.serviceStats || {},
+                availability: availabilityResponse.data.availability || {}
+            },
+            recentActivity: [], // You can add activity tracking here
+            systemInfo: {
+                adminPanelVersion: '1.0.0',
+                mainAPI: MAIN_API_URL,
+                uptime: process.uptime()
+            }
+        };
+
+        res.json(dashboardData);
+    } catch (error) {
+        console.error('Dashboard error:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to load dashboard data' 
         });
     }
 });
 
-// 3. Add new account (Admin only)
-app.post('/api/admin/accounts', authenticateAdmin, (req, res) => {
+// Get all accounts with filtering
+app.get('/api/admin/accounts/all', requireAuth, async (req, res) => {
+    try {
+        const response = await axios.get(`${MAIN_API_URL}/api/accounts`, {
+            headers: { 'x-admin-api-key': ADMIN_API_KEY }
+        });
+        
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to load accounts' });
+    }
+});
+
+// Add new account (with validation)
+app.post('/api/admin/accounts/add', requireAuth, async (req, res) => {
     try {
         const { service, email, password, username, notes } = req.body;
         
+        // Validate input
         if (!service || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Service, email and password are required'
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Service, email and password are required' 
             });
         }
+
+        // Forward to main API
+        const response = await axios.post(`${MAIN_API_URL}/api/accounts`, 
+            { service, email, password, username, notes },
+            { headers: { 'x-admin-api-key': ADMIN_API_KEY } }
+        );
+
+        // Log the addition
+        console.log(`[${new Date().toISOString()}] New account added: ${service} - ${email}`);
         
-        const accounts = loadAccounts();
-        
-        // Generate unique ID
-        const accountId = `${service}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        const newAccount = {
-            id: accountId,
-            email: email,
-            password: password,
-            username: username || email.split('@')[0],
-            service: service,
-            serviceName: service, // You can map this to proper names
-            currentUsers: 0,
-            maxUsers: 5,
-            fullyUsed: false,
-            notes: notes || '',
-            addedAt: new Date().toISOString(),
-            usedBy: []
-        };
-        
-        if (!accounts[service]) {
-            accounts[service] = [];
-        }
-        
-        accounts[service].push(newAccount);
-        saveAccounts(accounts);
-        
-        res.json({
-            success: true,
-            message: `Account added to ${service}`,
-            account: newAccount
-        });
-        
+        res.json(response.data);
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to add account'
-        });
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        } else {
+            res.status(500).json({ success: false, error: 'Failed to add account' });
+        }
     }
 });
 
-// 4. Delete account (Admin only)
-app.delete('/api/admin/accounts/:service/:accountId', authenticateAdmin, (req, res) => {
+// Delete account
+app.delete('/api/admin/accounts/:service/:id', requireAuth, async (req, res) => {
     try {
-        const { service, accountId } = req.params;
-        const accounts = loadAccounts();
+        const { service, id } = req.params;
         
-        if (!accounts[service]) {
-            return res.status(404).json({
-                success: false,
-                error: 'Service not found'
-            });
-        }
+        const response = await axios.delete(
+            `${MAIN_API_URL}/api/accounts/${service}/${id}`,
+            { headers: { 'x-admin-api-key': ADMIN_API_KEY } }
+        );
+
+        console.log(`[${new Date().toISOString()}] Account deleted: ${service} - ${id}`);
         
-        const accountIndex = accounts[service].findIndex(acc => acc.id === accountId);
-        
-        if (accountIndex === -1) {
-            return res.status(404).json({
-                success: false,
-                error: 'Account not found'
-            });
-        }
-        
-        const removedAccount = accounts[service].splice(accountIndex, 1)[0];
-        saveAccounts(accounts);
-        
-        res.json({
-            success: true,
-            message: 'Account removed successfully',
-            removedAccount: removedAccount
-        });
-        
+        res.json(response.data);
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to remove account'
-        });
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        } else {
+            res.status(500).json({ success: false, error: 'Failed to delete account' });
+        }
     }
 });
 
-// 5. Get account availability
-app.get('/api/availability', (req, res) => {
+// Get all services
+app.get('/api/admin/services', requireAuth, async (req, res) => {
     try {
-        const accounts = loadAccounts();
-        const availability = {};
-        
-        // Define service names and prices
-        const SERVICES = {
-            netflix: { name: 'Netflix', price: 150 },
-            spotify: { name: 'Spotify Premium', price: 400 },
-            primevideo: { name: 'Prime Video', price: 100 },
-            showmax_1m: { name: 'Showmax Pro', price: 100 },
-            youtubepremium: { name: 'YouTube Premium', price: 100 },
-            applemusic: { name: 'Apple Music', price: 250 },
-            canva: { name: 'Canva Pro', price: 300 },
-            urbanvpn: { name: 'Urban VPN', price: 100 }
-        };
-        
-        Object.keys(SERVICES).forEach(service => {
-            const serviceAccounts = accounts[service] || [];
-            const availableAccounts = serviceAccounts.filter(acc => !acc.fullyUsed);
-            const totalSlots = serviceAccounts.reduce((sum, acc) => sum + (acc.maxUsers || 5), 0);
-            const usedSlots = serviceAccounts.reduce((sum, acc) => sum + (acc.currentUsers || 0), 0);
-            
-            availability[service] = {
-                name: SERVICES[service].name,
-                price: SERVICES[service].price,
-                available: availableAccounts.length > 0,
-                availableAccounts: availableAccounts.length,
-                totalAccounts: serviceAccounts.length,
-                usedSlots: usedSlots,
-                totalSlots: totalSlots,
-                availableSlots: totalSlots - usedSlots
-            };
+        const response = await axios.get(`${MAIN_API_URL}/api/services`, {
+            headers: { 'x-admin-api-key': ADMIN_API_KEY }
         });
         
-        res.json({
-            success: true,
-            availability: availability
-        });
-        
+        res.json(response.data);
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get availability'
-        });
+        res.status(500).json({ success: false, error: 'Failed to load services' });
     }
 });
 
-// 6. Get all services
-app.get('/api/services', (req, res) => {
-    const SERVICES = [
-        { id: 'netflix', name: 'Netflix', price: 150 },
-        { id: 'spotify', name: 'Spotify Premium', price: 400 },
-        { id: 'primevideo', name: 'Prime Video', price: 100 },
-        { id: 'showmax_1m', name: 'Showmax Pro (1 Month)', price: 100 },
-        { id: 'showmax_3m', name: 'Showmax Pro (3 Months)', price: 250 },
-        { id: 'showmax_6m', name: 'Showmax Pro (6 Months)', price: 500 },
-        { id: 'showmax_1y', name: 'Showmax Pro (1 Year)', price: 900 },
-        { id: 'youtubepremium', name: 'YouTube Premium', price: 100 },
-        { id: 'applemusic', name: 'Apple Music', price: 250 },
-        { id: 'canva', name: 'Canva Pro', price: 300 },
-        { id: 'grammarly', name: 'Grammarly Premium', price: 250 },
-        { id: 'urbanvpn', name: 'Urban VPN', price: 100 },
-        { id: 'nordvpn', name: 'NordVPN', price: 350 },
-        { id: 'xbox', name: 'Xbox Game Pass', price: 400 },
-        { id: 'playstation', name: 'PlayStation Plus', price: 400 },
-        { id: 'deezer', name: 'Deezer Premium', price: 200 },
-        { id: 'tidal', name: 'Tidal HiFi', price: 250 },
-        { id: 'soundcloud', name: 'SoundCloud Go+', price: 150 },
-        { id: 'audible', name: 'Audible Premium Plus', price: 400 },
-        { id: 'skillshare', name: 'Skillshare Premium', price: 350 },
-        { id: 'masterclass', name: 'MasterClass', price: 600 },
-        { id: 'duolingo', name: 'Duolingo Super', price: 150 },
-        { id: 'notion', name: 'Notion Plus', price: 200 },
-        { id: 'microsoft365', name: 'Microsoft 365', price: 500 },
-        { id: 'googleone', name: 'Google One', price: 250 },
-        { id: 'adobecc', name: 'Adobe Creative Cloud', price: 700 },
-        { id: 'expressvpn', name: 'ExpressVPN', price: 400 },
-        { id: 'surfshark', name: 'Surfshark VPN', price: 200 },
-        { id: 'cyberghost', name: 'CyberGhost VPN', price: 250 },
-        { id: 'ipvanish', name: 'IPVanish', price: 200 },
-        { id: 'protonvpn', name: 'ProtonVPN Plus', price: 300 },
-        { id: 'windscribe', name: 'Windscribe Pro', price: 150 },
-        { id: 'eaplay', name: 'EA Play', price: 250 },
-        { id: 'ubisoft', name: 'Ubisoft+', price: 300 },
-        { id: 'geforcenow', name: 'Nvidia GeForce Now', price: 350 },
-        { id: 'peacock_tv', name: 'Peacock TV', price: 50 }
-    ];
-    
+// Health check endpoint
+app.get('/api/admin/health', (req, res) => {
     res.json({
         success: true,
-        count: SERVICES.length,
-        services: SERVICES
+        service: 'Chege Tech Admin Panel',
+        status: 'running',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        authenticated: !!req.session.isAuthenticated
+    });
+});
+
+// ==================== SERVE ADMIN PANEL ====================
+
+// Serve admin panel (must be authenticated)
+app.get('/admin*', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Login page (no auth required)
+app.get('/login', (req, res) => {
+    if (req.session.isAuthenticated) {
+        return res.redirect('/admin');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Redirect root to login
+app.get('/', (req, res) => {
+    if (req.session.isAuthenticated) {
+        res.redirect('/admin');
+    } else {
+        res.redirect('/login');
+    }
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ success: false, error: 'API endpoint not found' });
+});
+
+// 404 handler for all other routes
+app.use('*', requireAuth, (req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server error:', err.stack);
+    res.status(500).json({ 
+        success: false, 
+        error: process.env.NODE_ENV === 'production' 
+            ? 'Internal server error' 
+            : err.message 
     });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Chege Tech Admin Panel running on port ${PORT}`);
-    console.log(`📡 Admin Login: http://localhost:${PORT}`);
-    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-    console.log(`💰 Transactions: http://localhost:${PORT}/transactions`);
-    console.log(`🔑 Admin Password: ${process.env.ADMIN_PASSWORD ? 'Set' : 'Not set'}`);
+    console.log(`🚀 Chege Tech Admin Panel started`);
+    console.log(`📍 Port: ${PORT}`);
+    console.log(`🔗 URL: http://localhost:${PORT}`);
+    console.log(`📡 Main API: ${MAIN_API_URL}`);
+    console.log(`🔐 Admin authentication: ${ADMIN_PASSWORD ? 'Enabled' : 'Using default'}`);
+    console.log(`🛡️  Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ Ready to serve admin panel`);
 });
