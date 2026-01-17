@@ -3,402 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Chege Tech</title>
+    <title>Chege Tech - Admin Panel</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-container {
-            width: 100%;
-            max-width: 450px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 50px 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .login-logo {
-            font-size: 3.5rem;
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        
-        .login-header h1 {
-            color: #333;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .login-subtitle {
-            color: #666;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: #dc2626;
-            padding: 14px 18px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            display: none;
-        }
-        
-        .error-message i {
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        
-        .error-message span {
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        
-        .input-group {
-            margin-bottom: 25px;
-        }
-        
-        .input-group label {
-            display: block;
-            color: #555;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .input-group input {
-            width: 100%;
-            padding: 15px 18px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s;
-            background: white;
-            color: #333;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .input-group small {
-            display: block;
-            color: #94a3b8;
-            font-size: 13px;
-            margin-top: 6px;
-            line-height: 1.4;
-        }
-        
-        .login-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 10px;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .login-btn:active {
-            transform: translateY(0);
-        }
-        
-        .login-btn i {
-            font-size: 18px;
-        }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: 35px;
-            padding-top: 25px;
-            border-top: 1px solid #e2e8f0;
-            color: #94a3b8;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .login-footer i {
-            color: #667eea;
-        }
-        
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Responsive */
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 40px 25px;
-                margin: 20px;
-            }
-            
-            .login-logo {
-                font-size: 3rem;
-            }
-            
-            .login-header h1 {
-                font-size: 24px;
-            }
-            
-            .login-subtitle {
-                font-size: 14px;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <div class="login-logo">
-                <i class="fas fa-crown"></i>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h1>🔐 Chege Tech Admin</h1>
+                <p class="login-subtitle">Secure Admin Dashboard</p>
             </div>
-            <h1>Chege Tech Admin</h1>
-            <p class="login-subtitle">
-                Premium Account Management System<br>
-                Secure Admin Access Only
-            </p>
+            <div class="login-body">
+                <div class="form-group">
+                    <label for="apiKey">
+                        <i class="fas fa-key"></i> Admin API Key
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-key input-icon"></i>
+                        <input type="password" id="apiKey" placeholder="Enter your admin API key" autocomplete="off">
+                        <button type="button" class="show-password" onclick="togglePassword()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i> Contact system administrator for API key
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button onclick="login()" class="btn btn-primary btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login to Admin Panel
+                    </button>
+                </div>
+                
+                <div class="login-footer">
+                    <div class="security-note">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure connection • Encrypted transmission</span>
+                    </div>
+                    <div class="version-info">
+                        <i class="fas fa-code"></i>
+                        <span>Admin Panel v1.0.0</span>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <div class="error-message" id="errorMessage">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="errorText">Invalid admin password. Please try again.</span>
-        </div>
-        
-        <form id="loginForm">
-            <div class="input-group">
-                <label for="adminPassword">
-                    <i class="fas fa-key"></i> Admin Password
-                </label>
-                <input type="password" id="adminPassword" 
-                       placeholder="Enter your admin password" 
-                       required
-                       autocomplete="current-password">
-                <small>Default password: admin123 (Change in .env file)</small>
-            </div>
-            
-            <div class="input-group">
-                <label for="serverPort">
-                    <i class="fas fa-server"></i> Server Port
-                </label>
-                <input type="text" id="serverPort" 
-                       value="3001" 
-                       required
-                       readonly>
-                <small>Admin panel runs on port 3001 by default</small>
-            </div>
-            
-            <button type="submit" class="login-btn" id="loginButton">
-                <i class="fas fa-sign-in-alt"></i>
-                <span id="loginText">Login to Admin Panel</span>
-            </button>
-        </form>
-        
-        <div class="login-footer">
-            <i class="fas fa-shield-alt"></i>
-            <span>Protected Admin Area - Unauthorized Access Prohibited</span>
+        <div class="login-background">
+            <div class="bg-shape shape-1"></div>
+            <div class="bg-shape shape-2"></div>
+            <div class="bg-shape shape-3"></div>
         </div>
     </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.getElementById('loginForm');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            const loginButton = document.getElementById('loginButton');
-            const loginText = document.getElementById('loginText');
-            const adminPasswordInput = document.getElementById('adminPassword');
+
+    <!-- Admin Panel (Hidden until login) -->
+    <div id="adminPanel" class="screen" style="display: none;">
+        <!-- Top Navigation Bar -->
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <div class="brand-logo">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Chege Tech</h1>
+                    <span class="brand-subtitle">Admin Dashboard</span>
+                </div>
+            </div>
             
-            // Check if already logged in
-            if (localStorage.getItem('adminAuthenticated') === 'true') {
-                window.location.href = '/dashboard';
-            }
-            
-            // Focus on password field
-            adminPasswordInput.focus();
-            
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
+            <div class="navbar-controls">
+                <div class="control-group">
+                    <div class="control-item">
+                        <i class="fas fa-server"></i>
+                        <span id="apiStatus">Connected</span>
+                    </div>
+                    <div class="control-item">
+                        <i class="fas fa-clock"></i>
+                        <span id="currentTime">00:00:00</span>
+                    </div>
+                </div>
                 
-                const password = adminPasswordInput.value.trim();
+                <div class="user-menu">
+                    <button class="btn-notification" onclick="showNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationCount">3</span>
+                    </button>
+                    <button class="btn-refresh" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-bars"></i> Navigation</h3>
+                </div>
                 
-                if (!password) {
-                    showError('Please enter admin password');
-                    return;
-                }
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="#" class="menu-item active" onclick="showSection('dashboard')">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                            <span class="menu-badge">Home</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" onclick="showSection('accounts')">
+                            <i class="fas fa-users"></i>
+                            <span>Accounts</span>
+                            <span class="menu-badge" id="accountsCount">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" onclick="showSection('addAccount')">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Add Account</span>
+                            <span class="menu-badge new">New</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" onclick="showSection('services')">
+                            <i class="fas fa-list"></i>
+                            <span>Services</span>
+                            <span class="menu-badge" id="servicesCount">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" onclick="showSection('analytics')">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" onclick="showSection('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
                 
-                // Show loading
-                loginButton.disabled = true;
-                loginText.textContent = 'Authenticating...';
-                loginButton.innerHTML = '<div class="loader"></div>';
-                
-                try {
-                    // Test authentication with API
-                    const response = await fetch('/api/health', {
-                        method: 'GET',
-                        headers: {
-                            'Admin-Password': password
-                        }
-                    });
+                <div class="sidebar-footer">
+                    <div class="system-status">
+                        <h4><i class="fas fa-heartbeat"></i> System Status</h4>
+                        <div class="status-item">
+                            <span class="status-label">API Health:</span>
+                            <span class="status-value online">Healthy</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Database:</span>
+                            <span class="status-value online">Connected</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Last Sync:</span>
+                            <span class="status-value" id="lastSyncTime">Just now</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+                        <div class="header-actions">
+                            <button class="btn-action" onclick="exportData()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn-action" onclick="printReport()">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
+                    </div>
                     
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Authentication successful
-                        localStorage.setItem('adminAuthenticated', 'true');
-                        localStorage.setItem('adminPassword', password);
+                    <!-- Stats Cards -->
+                    <div class="stats-container">
+                        <div class="stat-card primary">
+                            <div class="stat-icon">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAccounts">0</h3>
+                                <p>Total Accounts</p>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="fas fa-arrow-up"></i> 12%
+                            </div>
+                        </div>
                         
-                        // Show success message
-                        showError('✅ Authentication successful! Redirecting...', 'success');
+                        <div class="stat-card success">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="availableAccounts">0</h3>
+                                <p>Available Slots</p>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="fas fa-arrow-up"></i> 8%
+                            </div>
+                        </div>
                         
-                        // Redirect to dashboard
-                        setTimeout(() => {
-                            window.location.href = '/dashboard';
-                        }, 1000);
+                        <div class="stat-card warning">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="activeUsers">0</h3>
+                                <p>Active Users</p>
+                            </div>
+                            <div class="stat-trend down">
+                                <i class="fas fa-arrow-down"></i> 3%
+                            </div>
+                        </div>
                         
-                    } else {
-                        throw new Error(data.error || 'Invalid password');
-                    }
+                        <div class="stat-card info">
+                            <div class="stat-icon">
+                                <i class="fas fa-stream"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalServices">0</h3>
+                                <p>Services</p>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="fas fa-arrow-up"></i> 5%
+                            </div>
+                        </div>
+                    </div>
                     
-                } catch (error) {
-                    console.error('Login error:', error);
-                    
-                    if (error.name === 'AbortError') {
-                        showError('Connection timeout. Please check your server.');
-                    } else if (error.message.includes('Failed to fetch')) {
-                        showError('Cannot connect to server. Make sure admin panel is running.');
-                    } else {
-                        showError(error.message || 'Invalid admin password');
-                    }
-                    
-                    // Reset button
-                    loginButton.disabled = false;
-                    loginText.textContent = 'Login to Admin Panel';
-                    loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i><span id="loginText">Login to Admin Panel</span>';
-                    
-                    // Clear password field
-                    adminPasswordInput.value = '';
-                    adminPasswordInput.focus();
-                }
-            });
-            
-            function showError(message, type = 'error') {
-                errorText.textContent = message;
-                
-                if (type === 'success') {
-                    errorMessage.style.background = 'rgba(16, 185, 129, 0.1)';
-                    errorMessage.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-                    errorMessage.style.color = '#065f46';
-                } else {
-                    errorMessage.style.background = 'rgba(239, 68, 68, 0.1)';
-                    errorMessage.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                    errorMessage.style.color = '#dc2626';
-                }
-                
-                errorMessage.style.display = 'flex';
-                
-                // Auto-hide after 5 seconds (except success messages)
-                if (type !== 'success') {
-                    setTimeout(() => {
-                        errorMessage.style.display = 'none';
-                    }, 5000);
-                }
-            }
-            
-            // Add Enter key support
-            adminPasswordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loginForm.requestSubmit();
-                }
-            });
-            
-            // Show/hide password on Alt key
-            let showPassword = false;
-            adminPasswordInput.addEventListener('keydown', function(e) {
-                if (e.altKey) {
-                    showPassword = !showPassword;
-                    this.type = showPassword ? 'text' : 'password';
-                    
-                    // Show temporary hint
-                    if (showPassword) {
-                        const hint = document.createElement('div');
-                        hint.style.cssText = `
-                            position: absolute;
-                            background: #333;
-                            color: white;
-                            padding: 5px 10px;
-                            border-radius: 4px;
-                            font-size: 12px;
-                            margin-top: 5px;
-                            z-index: 1000;
-                        `;
-                        hint.textContent = 'Alt key to hide';
-                        this.parentNode.appendChild(hint);
+                    <!-- Charts and Graphs -->
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-chart-bar"></i> Accounts Distribution</h3>
+                                <select class="chart-filter" onchange="updateChart()">
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="year">This Year</option>
+                                </select>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="accountsChart"></canvas>
+                            </div>
+                        </div>
                         
-                        setTimeout(() => hint.remove(), 2000);
-                    }
-                }
-            });
-        });
-    </script>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-chart-pie"></i> Service Usage</h3>
+                                <select class="chart-filter" onchange="updatePieChart()">
+                                    <option value="slots">By Slots</option>
+                                    <option value="accounts">By Accounts</option>
+                                </select>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="servicesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="activity-container">
+                        <div class="activity-header">
+                            <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                            <button class="btn-link" onclick="showAllActivity()">View All</button>
+                        </div>
+                        <div class="activity-list" id="activityList">
+                            <!-- Activity items will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                        <div class="actions-grid">
+                            <button class="action-btn" onclick="showSection('addAccount')">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Account</span>
+                            </button>
+                            <button class="action-btn" onclick="showSection('accounts')">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Manage Accounts</span>
+                            </button>
+                            <button class="action-btn" onclick="showSection('services')">
+                                <i class="fas fa-cogs"></i>
+                                <span>View Services</span>
+                            </button>
+                            <button class="action-btn" onclick="refreshAllData()">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Refresh Data</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Accounts Section -->
+                <section id="accounts" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-users"></i> Account Management</h2>
+                        <div class="header-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="accountSearch" placeholder="Search accounts..." onkeyup="searchAccounts()">
+                            </div>
+                            <select id="accountFilter" onchange="filterAccounts()" class="filter-select">
+                                <option value="">All Services</option>
+                                <!-- Services will be populated -->
+                            </select>
+                            <button class="btn-primary" onclick="showSection('addAccount')">
+                                <i class="fas fa-plus"></i> Add New
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Accounts Table -->
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>Account</th>
+                                    <th>Service</th>
+                                    <th>Status</th>
+                                    <th>Users</th>
+                                    <th>Added Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountsTable">
+                                <!-- Accounts will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Table Controls -->
+                    <div class="table-controls">
+                        <div class="controls-left">
+                            <span id="selectedCount">0 accounts selected</span>
+                            <button class="btn-danger" onclick="deleteSelected()" disabled>
+                                <i class="fas fa-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                        <div class="controls-right">
+                            <div class="pagination">
+                                <button class="page-btn" onclick="prevPage()">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span class="page-info">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                                <button class="page-btn" onclick="nextPage()">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Account Section -->
+                <section id="addAccount" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-user-plus"></i> Add New Account</h2>
+                        <button class="btn-secondary" onclick="resetAccountForm()">
+                            <i class="fas fa-redo"></i> Reset Form
+                        </button>
+                    </div>
+                    
+                    <form id="addAccountForm" class="account-form">
+                        <div class="form-card">
+                            <h3><i class="fas fa-info-circle"></i> Account Information</h3>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="serviceSelect">
+                                        <i class="fas fa-stream"></i> Service *
+                                    </label>
+                                    <select id="serviceSelect" required class="form-select">
+                                        <option value="">Select a service</option>
+                                        <!-- Services will be populated -->
+                                    </select>
+                                    <div class="form-hint">Choose the service for this account</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="accountEmail">
+                                        <i class="fas fa-envelope"></i> Email Address *
+                                    </label>
+                                    <input type="email" id="accountEmail" required 
+                                           placeholder="example@gmail.com" class="form-input">
+                                    <div class="form-hint">Valid email address for the account</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="accountPassword">
+                                        <i class="fas fa-lock"></i> Password *
+                                    </label>
+                                    <div class="password-input">
+                                        <input type="password" id="accountPassword" required 
+                                               placeholder="Enter password" class="form-input">
+                                        <button type="button" class="password-toggle" onclick="togglePasswordField()">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-hint">Account password (min. 6 characters)</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="accountUsername">
+                                        <i class="fas fa-user"></i> Username
+                                    </label>
+                                    <input type="text" id="accountUsername" 
+                                           placeholder="Optional username" class="form-input">
+                                    <div class="form-hint">Leave empty to use email prefix</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-card">
+                            <h3><i class="fas fa-sliders-h"></i> Account Settings</h3>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="maxUsers">
+                                        <i class="fas fa-users"></i> Maximum Users
+                                    </label>
+                                    <div class="slider-container">
+                                        <input type="range" id="maxUsers" min="1" max="10" value="5" 
+                                               class="form-slider" oninput="updateSliderValue()">
+                                        <span class="slider-value" id="sliderValue">5 users</span>
+                                    </div>
+                                    <div class="form-hint">Number of users this account can support</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="accountNotes">
+                                        <i class="fas fa-sticky-note"></i> Notes
+                                    </label>
+                                    <textarea id="accountNotes" rows="4" 
+                                              placeholder="Any special instructions or notes about this account..."
+                                              class="form-textarea"></textarea>
+                                    <div class="form-hint">Optional notes for internal use</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="showSection('accounts')">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn-success">
+                                <i class="fas fa-check"></i> Create Account
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Services Section -->
+                <section id="services" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-concierge-bell"></i> Services Management</h2>
+                        <div class="header-actions">
+                            <button class="btn-primary" onclick="addNewService()">
+                                <i class="fas fa-plus"></i> Add Service
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="services-grid" id="servicesGrid">
+                        <!-- Services will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-line"></i> Analytics & Reports</h2>
+                        <div class="header-actions">
+                            <select class="period-select" onchange="updateAnalytics()">
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d" selected>Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="1y">Last year</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Analytics Cards -->
+                    <div class="analytics-cards">
+                        <div class="analytics-card">
+                            <h3>Revenue Overview</h3>
+                            <div class="analytics-chart">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="analytics-card">
+                            <h3>Top Services</h3>
+                            <div class="top-services" id="topServices">
+                                <!-- Top services will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Reports -->
+                    <div class="reports-container">
+                        <h3><i class="fas fa-file-alt"></i> Detailed Reports</h3>
+                        <div class="reports-grid">
+                            <div class="report-card" onclick="generateReport('sales')">
+                                <i class="fas fa-shopping-cart"></i>
+                                <h4>Sales Report</h4>
+                                <p>Daily, weekly, and monthly sales</p>
+                            </div>
+                            <div class="report-card" onclick="generateReport('users')">
+                                <i class="fas fa-user-growth"></i>
+                                <h4>User Growth</h4>
+                                <p>New users and retention rates</p>
+                            </div>
+                            <div class="report-card" onclick="generateReport('accounts')">
+                                <i class="fas fa-chart-bar"></i>
+                                <h4>Account Usage</h4>
+                                <p>Account utilization statistics</p>
+                            </div>
+                            <div class="report-card" onclick="generateReport('performance')">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <h4>Performance</h4>
+                                <p>System performance metrics</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section id="settings" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-cog"></i> Settings</h2>
+                    </div>
+                    
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" onclick="showSettingTab('general')">
+                            <i class="fas fa-sliders-h"></i> General
+                        </button>
+                        <button class="settings-tab" onclick="showSettingTab('security')">
+                            <i class="fas fa-shield-alt"></i> Security
+                        </button>
+                        <button class="settings-tab" onclick="showSettingTab('notifications')">
+                            <i class="fas fa-bell"></i> Notifications
+                        </button>
+                        <button class="settings-tab" onclick="showSettingTab('api')">
+                            <i class="fas fa-code"></i> API
+                        </button>
+                    </div>
+                    
+                    <div class="settings-content">
+                        <div id="generalSettings" class="settings-panel active">
+                            <!-- General settings content -->
+                        </div>
+                        <div id="securitySettings" class="settings-panel">
+                            <!-- Security settings content -->
+                        </div>
+                        <div id="notificationSettings" class="settings-panel">
+                            <!-- Notification settings content -->
+                        </div>
+                        <div id="apiSettings" class="settings-panel">
+                            <!-- API settings content -->
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>© 2024 Chege Tech Admin Panel. All rights reserved.</p>
+                    <p class="footer-links">
+                        <a href="#" onclick="showSection('dashboard')">Dashboard</a> • 
+                        <a href="#" onclick="showSection('accounts')">Accounts</a> • 
+                        <a href="#" onclick="showSection('services')">Services</a> • 
+                        <a href="#" onclick="showSection('settings')">Settings</a>
+                    </p>
+                </div>
+                <div class="footer-right">
+                    <p>Last Updated: <span id="footerUpdateTime">--:--:--</span></p>
+                    <p>Version: <strong>1.0.0</strong></p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast"></div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <!-- Modal Dialogs -->
+        <div id="modalContainer"></div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
